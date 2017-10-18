@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 from mpmath import gammainc
 import datetime as dt
 from astropy.time import *
-from lctools.functionsEBL import *
+#from lctools.functionsEBL import *
 
 #powerlaw with cutoff
 def plco(x,n,si,co,p):
