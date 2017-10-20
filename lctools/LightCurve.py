@@ -360,6 +360,7 @@ class HAWCint:
         self._minTransits = 0.
         #default, >1 TeV:
         self._crabflux = 1.889e-11
+        self._redshift = 0.
         
         self.loadLC(lcfile, mjd_begin, mjd_end)
     
@@ -466,7 +467,7 @@ class HAWCint:
                             self._crabflux = float(cf[5])
                     if (len(cf)==2):
                         if (cf[0] =="#redshift:"):
-                            self._redshift = float(cf[5])
+                            self._redshift = float(cf[1])
                     continue
                 elif (row==""):
                     continue

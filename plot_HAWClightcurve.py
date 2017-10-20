@@ -21,14 +21,14 @@ p.add_argument("-m", "--minflux", dest="minflux", type=float, default = -1.5,
                  help="minimum flux value [Crab Units] (default = -2)")
 p.add_argument("-M", "--maxflux", dest="maxflux", type=float, default = 6.5, 
                  help="maximum flux value [Crab Units] (default = 6.5)")
-p.add_argument("-i", "--threshold", dest="threshold", type=float, 
+p.add_argument("-i", "--phThreshold", dest="phThreshold", type=float, 
                  default = -1., 
                  help="integration threshold for photon flux values "
-                 +"(default: as in input file)")
-p.add_argument("-c", "--CUthreshold", dest="CUthreshold", type=float, 
+                 +"(default: same as in input file)")
+p.add_argument("-c", "--cuThreshold", dest="cuThreshold", type=float, 
                  default = -1., 
                  help="integration threshold for CU flux values "
-                 +"(default: as in input file)")
+                 +"(default: same as in input file)")
 p.add_argument("--zero-off", dest="zero", action="store_false", default=True,
                  help="Show line at zero flux.")
 p.add_argument("-s","--nocrab", dest="showcrab", action="store_false", 
@@ -86,11 +86,12 @@ p.add_argument("--noBB", dest="noBB", action="store_true", default=False,
                help="Do not calculate/show Baysian Blocks (default = show)")
 args = p.parse_args()
 
+showcrab = args.showcrab
 
 minCU = args.minflux
 maxCU = args.maxflux
-threshold = args.threshold
-CUthreshold = args.CUthreshold
+phThreshold = args.phThreshold
+cuThreshold = args.cuThreshold
 errorbars = args.errorbars
 lcfile = args.lcfile
 
@@ -121,12 +122,13 @@ mjd_end = dt2mjd(enddate+dt.timedelta(days=1))
 #loading the light curve:
 hlc = LightCurve.HAWCint(lcfile, mjd_begin, mjd_end, logging = False)
 
-crabflux = hlc.crabflux
 redshift = hlc.redshift
 
 mjd_begin = hlc.mjd_begin
 mjd_end   = hlc.mjd_end
 mjdrange  = mjd_end - mjd_begin
+
+crabflux = hlc.crabflux
 minFlux = minCU*crabflux
 maxFlux = maxCU*crabflux
 
@@ -136,16 +138,37 @@ fluxesCU = hlc.fluxCU
 fluxesCU_err = hlc.fluxCU_err
 significances = sqrt(hlc.TS)
 
-intthresh = hlc.intThreshold
+intThresh = hlc.intThreshold
 #for photon flux, check if different threshold requested:
-if ((threshold>-1.) & (threshold!=intthresh)):
-    fluxes /= integratedflux(1.,hlc.index,hlc.cutoff,intthresh,redshift)
-    fluxes *= integratedflux(1.,hlc.index,hlc.cutoff,threshold,redshift)
+if ((phThreshold>-1.) & (phThreshold!=intThresh)):
+    #convert to new threshold
+    scale = integratedflux(ones(len(fluxes)),hlc.index,hlc.cutoff,phThreshold,redshift)
+    scale /= integratedflux(ones(len(fluxes)),hlc.index,hlc.cutoff,intThresh,redshift)
+    fluxes *= scale
+    fluxes_err *= scale
+    if isinstance(fluxes, ndarray):
+        if not ( all(in1d(hlc.index,hlc.index[0])) & all(in1d(hlc.cutoff,hlc.cutoff[0])) ):
+            print "Different spectra at different times prohibit simple scaling "
+            +"between photon and CU fluxes. Will not show CU axis"
+            showcrab = False
+        else:
+            minFlux*=scale[0]
+            maxFlux*=scale[0]
+    else:
+        minFlux*=scale
+        maxFlux*=scale
+else:
+    phThreshold = intThresh
 #for photon flux, check if different threshold requested:
-if ((CUthrshold>-1.) & (CUthreshold!=intthresh)):
+if ((cuThreshold>-1.) & (cuThreshold!=intThresh)):
     #recalculate based on simple PL for Crab
-    crabflux /= integratedflux(1,2.63,1000000,intthresh)
-    crabflux *= integratedflux(1,2.63,1000000,CUthreshold)
+    scale = integratedflux(1,2.63,1000000,cuThreshold)
+    scale /= integratedflux(1,2.63,1000000,intThresh)
+    #crabflux *= scale
+    fluxesCU *= scale
+    fluxesCU_err *= scale
+else:
+    cuThreshold = intThresh
 
 mjd = hlc.mjd
 mjd_tlerr = hlc.mjd_tlerr
@@ -168,7 +191,6 @@ print "Average flux:          %5.3e  ( %5.3f CU)"%(
         avgflux,avgfluxCU)
 print "Average 1-sigma error: %5.3e  ( %5.3f CU)"%(
         avgerr,avgerrCU)
-print "Average significance:  %5.3e  "%(average(significances))
 
 ###########################################################
 # the plot:
@@ -182,7 +204,7 @@ ax_f.set_ylim(minFlux,maxFlux)
 ax_f.set_xlim(mjd_begin, mjd_end)
 
 ax_f.set_xlabel('MJD [days]', fontsize=15)
-ax_f.set_ylabel(r'Flux >%.0f TeV [ph cm$^{-2}$s$^{-1}$]'%(intthresh), 
+ax_f.set_ylabel(r'Flux >%.0f TeV [ph cm$^{-2}$s$^{-1}$]'%(phThreshold), 
         fontsize=15)
 
 plt.yticks(fontsize=15)
@@ -287,9 +309,9 @@ if (args.fluxlines!=""):
             flow = f - ferr
             s = float(field[2])
             c = float(field[3])
-            f = integratedflux(f,s,c,intthresh)
-            fup = integratedflux(fup,s,c,intthresh)
-            flow = integratedflux(flow,s,c,intthresh)
+            f = integratedflux(f,s,c,phThresh)
+            fup = integratedflux(fup,s,c,phThresh)
+            flow = integratedflux(flow,s,c,phThresh)
             if ((f<(minFlux)) | (f>maxFlux)):
                 continue
             flval.append(float(f))
@@ -455,10 +477,10 @@ legend.get_title().set_size(15)
 legend.get_title().set_weight("bold")
 plt.setp(legend.get_title(), x=-30)
 
-if args.showcrab:
+if showcrab:
     ax_c = ax_f.twinx()
     ax_c.set_ylim(minCU,maxCU)
-    ax_c.set_ylabel(r'Flux >1 TeV [Crab Units]', fontsize=15, labelpad=15)
+    ax_c.set_ylabel(r'Flux >%.1f TeV [Crab Units]'%(cuThreshold), fontsize=15, labelpad=15)
     ax_c.grid(axis="y")
 
 if (args.preliminary):

@@ -15,20 +15,42 @@ def plco(x,n,si,co,p):
 
 def cuflux(n,s,c=1000000.,e_th=1.0,norm_crab=3.45e-11,si_crab=2.63):
     f = -1.
-    if ((c==0) | (c>=100000)):
+    #if ((c==0) | (c>=100000)):
+    if (all( (in1d(c,0)) | greater_equal(c,100000) )):
         f = n/norm_crab*(1.-si_crab)/(1.-s)*e_th**(si_crab-s)
     else:
-        f = - n/norm_crab*c**(1.-s)*(1.-si_crab)*e_th**(-1.+si_crab)*gammainc(1.-s,e_th/c)
+        if (isinstance(n, ndarray) | isinstance(s, ndarray) 
+                | isinstance(c,ndarray)):
+            #array operations seems to fail due to use of 'mpf' in gammainc
+            #using loop instead
+            i = 0
+            for ni,si,ci in zip(n,s,c):
+                f = - ni/norm_crab*ci**(1.-si)*(1.-si_crab)*e_th**(-1.+si_crab)*gammainc(1.-si,e_th/ci)
+                i += 1
+        else:
+            f = - n/norm_crab*c**(1.-s)*(1.-si_crab)*e_th**(-1.+si_crab)*gammainc(1.-s,e_th/c)
     return f
 
 def integratedflux(n,s,c=1000000.,e_th=1.0, z=0.):
     if (z>0):
         f = integratedFluxEBL(n ,s ,c ,e_th, z)
     else:
-        if ((c==0) | (c>=100000)):
+        #if ((c==0) | (c>=100000)):
+        if (all( (in1d(c,0)) | greater_equal(c,100000) )):
             f = - n/(1.-s)*e_th**(1.-s)
         else:
-            f = n*c**(1.-s)*gammainc(1.-s,float(e_th)/c)
+            if (isinstance(n, ndarray) | isinstance(s, ndarray) 
+                    | isinstance(c,ndarray)):
+                #array operations seems to fail due to use of 'mpf' in gammainc
+                #using loop instead
+                f = zeros(len(n))
+                i = 0
+                for ni,si,ci in zip(n,s,c):
+                    f[i] = ni*ci**(1.-si)*gammainc(1.-si,float(e_th)/ci)
+                    i +=1
+            else:
+                f = n*c**(1.-s)*gammainc(1.-s,float(e_th)/c)
+
     return f
 
 def sdname2date(sdname):
