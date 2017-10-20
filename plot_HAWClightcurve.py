@@ -17,12 +17,18 @@ from lctools import *
 
 p = argparse.ArgumentParser(description="Plot light curve")
 p.add_argument("lcfile", help="light curve ascii file")
-p.add_argument("-e", "--events", dest="events", type=str, default= "", 
-                 help="file with event MJD and label")
 p.add_argument("-m", "--minflux", dest="minflux", type=float, default = -1.5, 
                  help="minimum flux value [Crab Units] (default = -2)")
 p.add_argument("-M", "--maxflux", dest="maxflux", type=float, default = 6.5, 
                  help="maximum flux value [Crab Units] (default = 6.5)")
+p.add_argument("-i", "--threshold", dest="threshold", type=float, 
+                 default = -1., 
+                 help="integration threshold for photon flux values "
+                 +"(default: as in input file)")
+p.add_argument("-c", "--CUthreshold", dest="CUthreshold", type=float, 
+                 default = -1., 
+                 help="integration threshold for CU flux values "
+                 +"(default: as in input file)")
 p.add_argument("--zero-off", dest="zero", action="store_false", default=True,
                  help="Show line at zero flux.")
 p.add_argument("-s","--nocrab", dest="showcrab", action="store_false", 
@@ -32,10 +38,8 @@ p.add_argument("-s","--nocrab", dest="showcrab", action="store_false",
 p.add_argument("--no-errorbars", dest="errorbars", action="store_false", 
                  default=True,
                  help="Do not show errorbars on data points (default: show)")
-p.add_argument("--zerobaseline", dest="zerobaseline", action="store_false", 
-                 default=False,
-                 help="Use zero as baseline for 1, 2, and 3 sigma table "
-                 +"(default: use constant norm)")
+p.add_argument("-e", "--events", dest="events", type=str, default= "", 
+                 help="file with event MJD and label")
 p.add_argument("--showavg", dest="showavg", action="store_true", default=False,
                  help="Show line at average flux (default: false)")
 p.add_argument("--showfixednorm",dest="showfixednorm", action="store_true", 
@@ -44,9 +48,6 @@ p.add_argument("--showfixednorm",dest="showfixednorm", action="store_true",
 p.add_argument("--showCharFlux",dest="showCharFlux", action="store_true", 
                  default=False,
                  help="Show const flux best fit (default: false)")
-p.add_argument("-n", "--nooverlap", dest="nooverlap", default = False, 
-                 action="store_true",
-                 help="Skip periods overlapping in time (default = False)")
 p.add_argument("-o", "--output", dest="output", type=str, 
                  help="output image file name")
 p.add_argument("-p", "--preliminary", dest="preliminary", action="store_true",
@@ -88,8 +89,9 @@ args = p.parse_args()
 
 minCU = args.minflux
 maxCU = args.maxflux
+threshold = args.threshold
+CUthreshold = args.CUthreshold
 errorbars = args.errorbars
-zerobaseline = args.zerobaseline
 lcfile = args.lcfile
 
 #information from the lc file name:
@@ -119,12 +121,12 @@ mjd_end = dt2mjd(enddate+dt.timedelta(days=1))
 #loading the light curve:
 hlc = LightCurve.HAWCint(lcfile, mjd_begin, mjd_end, logging = False)
 
+crabflux = hlc.crabflux
+redshift = hlc.redshift
+
 mjd_begin = hlc.mjd_begin
 mjd_end   = hlc.mjd_end
 mjdrange  = mjd_end - mjd_begin
-
-crabflux = hlc.crabflux
-intthresh = hlc.intThreshold
 minFlux = minCU*crabflux
 maxFlux = maxCU*crabflux
 
@@ -133,6 +135,17 @@ fluxes_err = hlc.flux_err
 fluxesCU = hlc.fluxCU
 fluxesCU_err = hlc.fluxCU_err
 significances = sqrt(hlc.TS)
+
+intthresh = hlc.intThreshold
+#for photon flux, check if different threshold requested:
+if ((threshold>-1.) & (threshold!=intthresh)):
+    fluxes /= integratedflux(1.,hlc.index,hlc.cutoff,intthresh,redshift)
+    fluxes *= integratedflux(1.,hlc.index,hlc.cutoff,threshold,redshift)
+#for photon flux, check if different threshold requested:
+if ((CUthrshold>-1.) & (CUthreshold!=intthresh)):
+    #recalculate based on simple PL for Crab
+    crabflux /= integratedflux(1,2.63,1000000,intthresh)
+    crabflux *= integratedflux(1,2.63,1000000,CUthreshold)
 
 mjd = hlc.mjd
 mjd_tlerr = hlc.mjd_tlerr

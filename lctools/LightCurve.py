@@ -396,6 +396,14 @@ class HAWCint:
         return self._transits
     
     @property
+    def index(self):
+        return self._index
+    
+    @property
+    def cutoff(self):
+        return self._cutoff
+    
+    @property
     def TS(self):
         return self._TS
     
@@ -410,6 +418,10 @@ class HAWCint:
     @property
     def crabflux(self):
         return self._crabflux
+    
+    @property
+    def redshift(self):
+        return self._redshift
     
     def loadLC(self,lcfile,mjd_begin,mjd_end):
         
@@ -434,6 +446,8 @@ class HAWCint:
         fluxCU = []
         fluxCU_err = []
         transits = []
+        index = []
+        cutoff = []
         TS = []
         
         ffile = open(lcfile,"r")
@@ -450,6 +464,9 @@ class HAWCint:
                     if (len(cf)==6):
                         if ((cf[0] =="#Crab") & (cf[1]=="flux")):
                             self._crabflux = float(cf[5])
+                    if (len(cf)==2):
+                        if (cf[0] =="#redshift:"):
+                            self._redshift = float(cf[5])
                     continue
                 elif (row==""):
                     continue
@@ -466,6 +483,8 @@ class HAWCint:
                 fluxCU.append(float(field[4]))
                 fluxCU_err.append(float(field[5]))
                 transits.append(float(field[6]))
+                index.append(float(field[7]))
+                cutoff.append(float(field[8]))
                 TS.append(float(field[9]))
             except:
                 raise
@@ -479,6 +498,8 @@ class HAWCint:
         self._fluxCU = array(fluxCU, dtype=float)
         self._fluxCU_err = array(fluxCU_err, dtype=float)
         self._transits = array(transits, dtype=float)
+        self._index = array(index, dtype=float)
+        self._cutoff = array(cutoff, dtype=float)
         self._TS = array(TS, dtype=float)
          
         # from file:
