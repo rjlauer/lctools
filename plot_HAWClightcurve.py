@@ -74,7 +74,8 @@ p.add_argument("--culines", dest="culines", type=str, default= "",
                  help="file with flux lines (in Crab units) to be added")
 p.add_argument("--showdates", dest="showdates", type=str, 
                  default= "2015-01-01,2015-04-01,2015-07-01,2015-10-01,"
-                 +"2016-01-01,2016-04-01,2016-07-01", 
+                         +"2016-01-01,2016-04-01,2016-07-01,2016-10-01," 
+                         +"2017-01-01,2017-04-01,2017-07-01,2017-10-01",
                  help="comma-separated list of dates (YYYY-MM-DD) to be shown "
                  +"as vertical lines (default: every 3 months, beginning "
                  +"2015-01-01')")
