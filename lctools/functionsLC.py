@@ -8,6 +8,7 @@ from mpmath import gammainc
 import datetime as dt
 from astropy.time import *
 #from lctools.functionsEBL import *
+from functionsEBL import *
 
 #powerlaw with cutoff
 def plco(x,n,si,co,p):
