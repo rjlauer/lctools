@@ -1,8 +1,8 @@
 from hawc import hawcnest, data_structures
 from hawc.hawcnest import HAWCUnits as U
+from hawc.hawcnest import HAWCNest
 from hawc.data_structures import *
 from hawc import grmodel_services as grmodel_services
-from HAWCNest import HAWCNest
 
 from numpy import *
 
