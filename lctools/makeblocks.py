@@ -1,4 +1,6 @@
 from numpy import *
+import numpy
+
 
 ######################################################################
 #Baysian Blocks
@@ -12,21 +14,24 @@ def makeblocks(smjd,srate,srate_err,ncp_prior):
     best = []
     last = []
 
+    mask = triu(ones([N, N]), k=0)
+    b = tile((srate / (srate_err**2)), (N,1)) * mask
+    a = tile(1. / (srate_err**2), (N,1)) * mask
+
     for R in xrange(1,N+1):
         #print "R = ",R
         #print "  srate[0:R] = ", srate[0:R]
         #print "  srate_err[0:R] = ", srate_err[0:R]
-        sum_a = 1/2.*array([ sum (1./srate_err[k:R]**2.) for k in xrange(0,R)])
-        sum_b = -array([ sum(srate[k:R]/srate_err[k:R]**2.) for k in xrange(0,R)])
+        sum_a = 2. * sum(a[:R,:R], axis=1)
+        sum_b = sum(b[:R,:R], axis=1)**2
         #print "  sum_a = ", sum_a
         #print "  sum_b = ", sum_b
-        fit_vec = sum_b**2./(4.*sum_a)
+        fit_vec = sum_b / (sum_a)
         #print "  fit_vec = ", fit_vec
         last.append( argmax( concatenate([[0.], best]) + fit_vec - ncp_prior ) )
         #print "  last = ",last
         best.append( (concatenate([[0.], best]) + fit_vec -ncp_prior )[ last[R-1] ] )
         #print "  best = ",best
-
     s_index = last[N-1]
     s_ncp = 0
     #one entry per change point:
