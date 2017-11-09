@@ -54,7 +54,7 @@ p.add_argument("--showCharFlux",dest="showCharFlux", action="store_true",
 p.add_argument("-t","--mintransits", dest="mintransits", type=double, 
                  default = 0.5, 
                  help="Do not show data points with coverage below this "
-                 +"number of transits (default = 0)")
+                 +"number of transits (default = 0.5)")
 p.add_argument("-n", "--nooverlap", dest="nooverlap", default = False, 
                  action="store_true",
                  help="Skip periods overlapping in time (default = False)")
