@@ -501,10 +501,7 @@ plt.setp(legend.get_title(), x=-50)
 
 #plotting or storing
 if args.output:
-     fig.savefig("LC_"+args.output, tight_layout=True, dpi=300)
-     figFlux.savefig("histFlux_"+args.output, tight_layout=True)
-     if not (args.noBB):
-         figBB.savefig("histBB_"+args.output, tight_layout=True)
+     fig.savefig(args.output, tight_layout=True, dpi=300)
 else:
      plt.show()
 

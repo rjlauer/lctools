@@ -489,17 +489,16 @@ if not (args.noBB):
 
 #LC plotting:
 
-legend = ax_f.legend(loc='upper right',fontsize=15,numpoints=1)
-legend.set_title(object)
-legend.get_title().set_size(15)
-legend.get_title().set_weight("bold")
-plt.setp(legend.get_title(), x=-30)
-
 if args.showcrab:
     ax_c = ax_f.twinx()
+    ax_c.set_axisbelow(True)
     ax_c.set_ylim(minCU,maxCU)
     ax_c.set_ylabel(r'Flux >1 TeV [Crab Units]', fontsize=15, labelpad=15)
+    lclabels = ax_f.get_legend_handles_labels()
     ax_c.grid(axis="y")
+    legend = ax_c.legend(lclabels[0],lclabels[1],loc='upper right',fontsize=15,numpoints=1)
+else:
+    legend = ax_f.legend(loc='upper right',fontsize=15,numpoints=1)
 
 if (args.preliminary):
     ax_f.text(mjd_begin+mjdrange*0.35, minFlux+(maxFlux-minFlux)*0.92, 
@@ -510,15 +509,16 @@ if (args.preliminary):
                 'Pass %d'%(passx),color="0.7",fontsize=15,fontweight="bold")
 
 
+legend.set_title(object)
+legend.get_title().set_size(15)
+legend.get_title().set_weight("bold")
+plt.setp(legend.get_title(), x=-50)
 
 
 
 #plotting or storing
 if args.output:
-     fig.savefig("LC_"+args.output, tight_layout=True, dpi=300)
-     figFlux.savefig("histFlux_"+args.output, tight_layout=True)
-     if not (args.noBB):
-         figBB.savefig("histBB_"+args.output, tight_layout=True)
+     fig.savefig(args.output, tight_layout=True, dpi=300)
 else:
      plt.show()
 
